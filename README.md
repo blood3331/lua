@@ -1,2 +1,1 @@
-# lua
- running lua
+c:\Windows\system64>lua53
