@@ -1,0 +1,192 @@
+-- Tetris game in Lua using the LÖVE framework
+
+-- Import LÖVE framework
+love = require("love")
+
+-- Constants
+local WINDOW_WIDTH = 400
+local WINDOW_HEIGHT = 600
+local BLOCK_SIZE = 30
+
+-- Tetromino shapes
+local tetrominos = {
+    {
+        {1, 1, 1, 1}, -- I
+    },
+    {
+        {1, 1, 1},
+        {0, 1, 0},     -- T
+    },
+    {
+        {1, 1, 1},
+        {1, 0, 0},     -- L
+    },
+    {
+        {1, 1, 1},
+        {0, 0, 1},     -- J
+    },
+    {
+        {1, 1},
+        {1, 1},         -- O
+    },
+    {
+        {1, 1, 1},
+        {0, 1, 0},     -- S
+    },
+    {
+        {1, 1, 1},
+        {0, 0, 1},     -- Z
+    },
+}
+
+local currentTetromino
+local currentX, currentY
+local currentRotation
+local playfield
+
+-- Initialize the game
+function love.load()
+    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
+    love.window.setTitle("Tetris")
+    math.randomseed(os.time())
+
+    -- Initialize the playfield
+    playfield = {}
+    for i = 1, WINDOW_HEIGHT / BLOCK_SIZE do
+        playfield[i] = {}
+        for j = 1, WINDOW_WIDTH / BLOCK_SIZE do
+            playfield[i][j] = 0
+        end
+    end
+
+    spawnTetromino()
+end
+
+-- Update game state
+function love.update(dt)
+    -- Move tetromino down
+    currentY = currentY + 1
+
+    -- Check for collisions and update playfield
+    if not isCollision(currentTetromino, currentX, currentY, currentRotation) then
+        updatePlayfield()
+    else
+        -- Reset tetromino and check for game over
+        currentY = currentY - 1
+        updatePlayfield()
+        spawnTetromino()
+        if isCollision(currentTetromino, currentX, currentY, currentRotation) then
+            -- Game over
+            love.load()
+        end
+    end
+end
+
+-- Draw the game
+function love.draw()
+    -- Draw playfield
+    for i, row in ipairs(playfield) do
+        for j, cell in ipairs(row) do
+            if cell > 0 then
+                love.graphics.setColor(getColor(cell))
+                love.graphics.rectangle("fill", (j - 1) * BLOCK_SIZE, (i - 1) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+            end
+        end
+    end
+
+    -- Draw the current tetromino
+    for y, row in ipairs(currentTetromino[currentRotation]) do
+        for x, cell in ipairs(row) do
+            if cell == 1 then
+                love.graphics.setColor(getColor(7)) -- Color for the tetrominos
+                love.graphics.rectangle("fill", (currentX + x - 1) * BLOCK_SIZE, (currentY + y - 1) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+            end
+        end
+    end
+end
+
+-- Handle user input
+function love.keypressed(key)
+    if key == "left" then
+        currentX = currentX - 1
+        if isCollision(currentTetromino, currentX, currentY, currentRotation) then
+            currentX = currentX + 1
+        end
+    elseif key == "right" then
+        currentX = currentX + 1
+        if isCollision(currentTetromino, currentX, currentY, currentRotation) then
+            currentX = currentX - 1
+        end
+    elseif key == "up" then
+        local newRotation = (currentRotation % #currentTetromino) + 1
+        if not isCollision(currentTetromino, currentX, currentY, newRotation) then
+            currentRotation = newRotation
+        end
+    elseif key == "down" then
+        currentY = currentY + 1
+        if isCollision(currentTetromino, currentX, currentY, currentRotation) then
+            currentY = currentY - 1
+        end
+    end
+end
+
+-- Spawn a random tetromino
+function spawnTetromino()
+    currentTetromino = tetrominos[math.random(#tetrominos)]
+    currentX = math.floor(WINDOW_WIDTH / BLOCK_SIZE / 2) - 1
+    currentY = 1
+    currentRotation = 1
+end
+
+-- Check for collision between tetromino and playfield
+function isCollision(tetromino, x, y, rotation)
+    for y1, row in ipairs(tetromino[rotation]) do
+        for x1, cell in ipairs(row) do
+            if cell == 1 then
+                local playfieldX = x + x1
+                local playfieldY = y + y1
+                if playfieldX < 1 or playfieldX > #playfield[1] or playfieldY > #playfield or playfield[playfieldY] and playfield[playfieldY][playfieldX] > 0 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Update the playfield with the current tetromino
+function updatePlayfield()
+    for y1, row in ipairs(currentTetromino[currentRotation]) do
+        for x1, cell in ipairs(row) do
+            if cell == 1 then
+                local playfieldX = currentX + x1
+                local playfieldY = currentY + y1
+                playfield[playfieldY][playfieldX] = 7 -- Color for the tetrominos
+            end
+        end
+    end
+
+    -- Check for completed lines and clear them
+    for i = #playfield, 1, -1 do
+        local row = playfield[i]
+        local isComplete = true
+        for _, cell in ipairs(row) do
+            if cell == 0 then
+                isComplete = false
+                break
+            end
+        end
+        if isComplete then
+            table.remove(playfield, i)
+            table.insert(playfield, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+        end
+    end
+end
+
+-- Get color based on tetromino ID
+function getColor(id)
+    local colors = {
+        [1] = {0
+
+
+
